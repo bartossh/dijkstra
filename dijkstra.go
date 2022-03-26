@@ -10,8 +10,26 @@ import (
 
 // Vertex represents graph node position in multidimensional euclidean space and all its connections
 type Vertex struct {
-	Position    *Position
-	Connections []int
+	position    *Position
+	connections []int
+}
+
+// NewVertex is constructor creating pointer to new instance of Vertex
+func NewVertex(p *Position, c []int) *Vertex {
+	return &Vertex{
+		position:    p,
+		connections: c,
+	}
+}
+
+// Position returns vertex position
+func (v Vertex) Position() *Position {
+	return v.position
+}
+
+// Connections returns vertex connections
+func (v Vertex) Connections() []int {
+	return v.connections
 }
 
 // Vertexes is a collection of Vertex entities
@@ -19,31 +37,32 @@ type Vertexes struct {
 	inner []*Vertex
 }
 
+// NewVertexes creates pointer to Vertexes that has an inner slice of pointer to future graph vertex points
 func NewVertexes(vertexes []*Vertex) *Vertexes {
 	return &Vertexes{inner: vertexes}
 }
 
 // GetPositionByIdx returns vertex position by idx in Vertexes slice
-func (v Vertexes) GetPositionByIdx(idx int) *Position { return v.inner[idx].Position }
+func (v Vertexes) GetPositionByIdx(idx int) *Position { return v.inner[idx].position }
 
 // GetPositionByKey returns vertex position by its position key
 func (v Vertexes) GetPositionByKey(key int) *Position {
 	for _, v := range v.inner {
-		if v.Position.key == key {
-			return v.Position
+		if v.position.key == key {
+			return v.position
 		}
 	}
 	return nil
 }
 
-// PathNode represents next node in path with his parent
+// PathNode represents node with his parent node
 type PathNode struct {
 	parent, actual *node
 }
 
+// Path represents calculated shortest path between to nodes on the  graph
 type Path struct {
-	Visited       map[int]*node
-	Path          map[*PathNode]struct{}
+	Nodes         []*PathNode
 	TotalDistance float64
 }
 
@@ -58,6 +77,14 @@ func NewPosition(key int, vector *mat.VecDense) *Position {
 	return &Position{key, vector}
 }
 
+func (p Position) Key() int {
+	return p.key
+}
+
+func (p Position) Vector() *mat.VecDense {
+	return p.vector
+}
+
 func (p Position) getDistance(np *Position) float64 {
 	rv := new(mat.VecDense)
 	rv.SubVec(p.vector.TVec(), np.vector.TVec())
@@ -70,19 +97,13 @@ type node struct {
 	neighbours map[*node]struct{}
 }
 
+func (n *node) GetNodeKeyAndPosition() *Position {
+	return n.vertex
+}
+
 func newStartNode(vertex *Position) *node {
 	neighbours := make(map[*node]struct{})
 	return &node{vertex: vertex, neighbours: neighbours}
-}
-
-func (n *node) setStart() {
-	n.total = 0
-}
-
-func (n *node) putNeighbour(nn *node) bool {
-	_, ok := n.neighbours[nn]
-	n.neighbours[nn] = struct{}{}
-	return ok
 }
 
 func (n *node) getNeighboursDistance(nn *node) float64 {
@@ -94,30 +115,18 @@ func (n *node) getNeighboursDistance(nn *node) float64 {
 }
 
 type graph struct {
-	visited, unvisited map[int]*node
+	vertexes  []*Vertex
+	unvisited map[int]*node
 }
 
 // NewGraph creates new graph for dijkstra the shortest path calculation
 func NewGraph(vertexes *Vertexes) *graph {
-	kv := make(map[int]*Vertex)
-	unvisited := make(map[int]*node)
-
+	graphVertexes := make([]*Vertex, 0, len(vertexes.inner))
 	for _, v := range vertexes.inner {
-		kv[v.Position.key] = v
-		nd := newStartNode(v.Position)
-		nd.total = math.MaxFloat64
-		unvisited[v.Position.key] = nd
+		vv := *v
+		graphVertexes = append(graphVertexes, &vv)
 	}
-
-	for k, v := range kv {
-		for _, nk := range v.Connections {
-			nd := unvisited[k]
-			nd.neighbours[unvisited[nk]] = struct{}{}
-			unvisited[k] = nd
-		}
-	}
-
-	return &graph{unvisited: unvisited, visited: make(map[int]*node)}
+	return &graph{unvisited: createUnvisited(vertexes.inner), vertexes: graphVertexes}
 }
 
 // CalculateResultGraphFromPosition provides Path of the shortest path calculation and error if path has no solution
@@ -146,16 +155,10 @@ func (g *graph) CalculateResultGraphFromKeys(a, b int) (Path, error) {
 
 func (g *graph) calcResultGraph(st, fn *node) (Path, error) {
 	if st.getNeighboursDistance(fn) == 0 {
-		return Path{
-			Visited:       map[int]*node{st.vertex.key: st},
-			Path:          make(map[*PathNode]struct{}),
-			TotalDistance: 0,
-		}, nil
+		return Path{}, nil
 	}
 	st.total = 0
-	res := Path{
-		Path: make(map[*PathNode]struct{}),
-	}
+	res := Path{}
 
 	act := st
 Loop:
@@ -168,7 +171,6 @@ Loop:
 			}
 		}
 		delete(g.unvisited, act.vertex.key)
-		g.visited[act.vertex.key] = act
 		minDist := math.MaxFloat64
 		for _, n := range g.unvisited {
 			if n.total < minDist {
@@ -178,9 +180,7 @@ Loop:
 		}
 		if act.vertex.key == fn.vertex.key {
 			delete(g.unvisited, act.vertex.key)
-			g.visited[act.vertex.key] = act
 			res.TotalDistance = act.total
-			res.Visited = g.visited
 			break Loop
 		}
 		if minDist == math.MaxFloat64 {
@@ -205,8 +205,9 @@ Loop:
 			parent: parent,
 			actual: act,
 		}
-		res.Path[pn] = struct{}{}
+		res.Nodes = append(res.Nodes, pn)
 	}
+	g.unvisited = createUnvisited(g.vertexes)
 
 	return res, nil
 }
@@ -234,4 +235,25 @@ func (g *graph) findStartFinnishNodeByTheKey(a, b int) (*node, *node) {
 	na := g.unvisited[a]
 	nb := g.unvisited[b]
 	return na, nb
+}
+
+func createUnvisited(vrx []*Vertex) map[int]*node {
+	kv := make(map[int]*Vertex)
+	unvisited := make(map[int]*node)
+
+	for _, v := range vrx {
+		kv[v.position.key] = v
+		nd := newStartNode(v.position)
+		nd.total = math.MaxFloat64
+		unvisited[v.position.key] = nd
+	}
+
+	for k, v := range kv {
+		for _, nk := range v.connections {
+			nd := unvisited[k]
+			nd.neighbours[unvisited[nk]] = struct{}{}
+			unvisited[k] = nd
+		}
+	}
+	return unvisited
 }
