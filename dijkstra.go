@@ -36,8 +36,14 @@ func (v Vertexes) GetPositionByKey(key int) *Position {
 	return nil
 }
 
-type ResultGraph struct {
+// PathNode represents next node in path with his parent
+type PathNode struct {
+	parent, actual *node
+}
+
+type Path struct {
 	Visited       map[int]*node
+	Path          map[*PathNode]struct{}
 	TotalDistance float64
 }
 
@@ -92,7 +98,7 @@ type graph struct {
 }
 
 // NewGraph creates new graph for dijkstra the shortest path calculation
-func NewGraph(vertexes Vertexes) *graph {
+func NewGraph(vertexes *Vertexes) *graph {
 	kv := make(map[int]*Vertex)
 	unvisited := make(map[int]*node)
 
@@ -114,39 +120,42 @@ func NewGraph(vertexes Vertexes) *graph {
 	return &graph{unvisited: unvisited, visited: make(map[int]*node)}
 }
 
-// CalculateResultGraphFromPosition provides ResultGraph of the shortest path calculation and error if path has no solution
-func (g *graph) CalculateResultGraphFromPosition(a, b *Position) (ResultGraph, error) {
+// CalculateResultGraphFromPosition provides Path of the shortest path calculation and error if path has no solution
+func (g *graph) CalculateResultGraphFromPosition(a, b *Position) (Path, error) {
 	st, fn := g.findStarFinishNodeByPosition(a, b)
 	if st == nil {
-		return ResultGraph{}, errors.New("cannot find start node")
+		return Path{}, errors.New("cannot find start node")
 	}
 	if fn == nil {
-		return ResultGraph{}, errors.New("cannot find finish node")
+		return Path{}, errors.New("cannot find finish node")
 	}
 	return g.calcResultGraph(st, fn)
 }
 
-// CalculateResultGraphFromKeys provides ResultGraph of the shortest path calculation and error if path has no solution
-func (g *graph) CalculateResultGraphFromKeys(a, b int) (ResultGraph, error) {
+// CalculateResultGraphFromKeys provides Path of the shortest path calculation and error if path has no solution
+func (g *graph) CalculateResultGraphFromKeys(a, b int) (Path, error) {
 	st, fn := g.findStartFinnishNodeByTheKey(a, b)
 	if st == nil {
-		return ResultGraph{}, errors.New("cannot find start node")
+		return Path{}, errors.New("cannot find start node")
 	}
 	if fn == nil {
-		return ResultGraph{}, errors.New("cannot find finish node")
+		return Path{}, errors.New("cannot find finish node")
 	}
 	return g.calcResultGraph(st, fn)
 }
 
-func (g *graph) calcResultGraph(st, fn *node) (ResultGraph, error) {
+func (g *graph) calcResultGraph(st, fn *node) (Path, error) {
 	if st.getNeighboursDistance(fn) == 0 {
-		return ResultGraph{
+		return Path{
 			Visited:       map[int]*node{st.vertex.key: st},
+			Path:          make(map[*PathNode]struct{}),
 			TotalDistance: 0,
 		}, nil
 	}
 	st.total = 0
-	res := ResultGraph{}
+	res := Path{
+		Path: make(map[*PathNode]struct{}),
+	}
 
 	act := st
 Loop:
@@ -167,7 +176,7 @@ Loop:
 				act = n
 			}
 		}
-		if act.vertex.getDistance(fn.vertex) == 0 {
+		if act.vertex.key == fn.vertex.key {
 			delete(g.unvisited, act.vertex.key)
 			g.visited[act.vertex.key] = act
 			res.TotalDistance = act.total
@@ -177,6 +186,26 @@ Loop:
 		if minDist == math.MaxFloat64 {
 			return res, fmt.Errorf("there is no connection between nodes of key %#v and %#v", st.vertex.key, fn.vertex.key)
 		}
+	}
+	act = fn
+	var parent *node
+	for {
+		if act.vertex.key == st.vertex.key {
+			break
+		}
+		minDist := math.MaxFloat64
+		parent = act
+		for n := range act.neighbours {
+			if n.total < minDist {
+				minDist = n.total
+				act = n
+			}
+		}
+		pn := &PathNode{
+			parent: parent,
+			actual: act,
+		}
+		res.Path[pn] = struct{}{}
 	}
 
 	return res, nil
