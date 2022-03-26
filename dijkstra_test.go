@@ -266,7 +266,7 @@ func TestNodesCreation(t *testing.T) {
 			}
 			for i, g := range c.graph {
 				for _, idx := range g.conn {
-					nodes[i].putNeighbour(nodes[idx])
+					nodes[i].neighbours[nodes[idx]] = struct{}{}
 				}
 			}
 			// then
@@ -295,30 +295,12 @@ func TestVertexesGetPositionByKey(t *testing.T) {
 			title: "small simple one way graph",
 			vertexes: NewVertexes(
 				[]*Vertex{
-					{
-						Position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
-						Connections: []int{4},
-					},
-					{
-						Position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-						Connections: []int{1},
-					},
-					{
-						Position:    NewPosition(1, mat.NewVecDense(2, []float64{1, 0})),
-						Connections: []int{0, 2},
-					},
-					{
-						Position:    NewPosition(2, mat.NewVecDense(2, []float64{2, 0})),
-						Connections: []int{1, 3},
-					},
-					{
-						Position:    NewPosition(4, mat.NewVecDense(2, []float64{4, 0})),
-						Connections: []int{3, 5},
-					},
-					{
-						Position:    NewPosition(3, mat.NewVecDense(2, []float64{3, 0})),
-						Connections: []int{2, 4},
-					},
+					NewVertex(NewPosition(5, mat.NewVecDense(2, []float64{5, 0})), []int{4}),
+					NewVertex(NewPosition(0, mat.NewVecDense(2, []float64{0, 0})), []int{1}),
+					NewVertex(NewPosition(1, mat.NewVecDense(2, []float64{1, 0})), []int{0, 2}),
+					NewVertex(NewPosition(2, mat.NewVecDense(2, []float64{2, 0})), []int{1, 3}),
+					NewVertex(NewPosition(4, mat.NewVecDense(2, []float64{4, 0})), []int{3, 5}),
+					NewVertex(NewPosition(3, mat.NewVecDense(2, []float64{3, 0})), []int{2, 4}),
 				}),
 			key1: 0,
 			key2: 5,
@@ -330,28 +312,28 @@ func TestVertexesGetPositionByKey(t *testing.T) {
 			vertexes: NewVertexes(
 				[]*Vertex{
 					{
-						Position:    NewPosition(3, mat.NewVecDense(2, []float64{3, 0})),
-						Connections: []int{2, 4},
+						position:    NewPosition(3, mat.NewVecDense(2, []float64{3, 0})),
+						connections: []int{2, 4},
 					},
 					{
-						Position:    NewPosition(2, mat.NewVecDense(2, []float64{2, 0})),
-						Connections: []int{1, 3},
+						position:    NewPosition(2, mat.NewVecDense(2, []float64{2, 0})),
+						connections: []int{1, 3},
 					},
 					{
-						Position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
-						Connections: []int{4},
+						position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
+						connections: []int{4},
 					},
 					{
-						Position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-						Connections: []int{1},
+						position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
+						connections: []int{1},
 					},
 					{
-						Position:    NewPosition(1, mat.NewVecDense(2, []float64{1, 0})),
-						Connections: []int{0, 2},
+						position:    NewPosition(1, mat.NewVecDense(2, []float64{1, 0})),
+						connections: []int{0, 2},
 					},
 					{
-						Position:    NewPosition(4, mat.NewVecDense(2, []float64{4, 0})),
-						Connections: []int{3, 5},
+						position:    NewPosition(4, mat.NewVecDense(2, []float64{4, 0})),
+						connections: []int{3, 5},
 					},
 				}),
 			key1: 0,
@@ -364,40 +346,40 @@ func TestVertexesGetPositionByKey(t *testing.T) {
 			vertexes: NewVertexes(
 				[]*Vertex{
 					{
-						Position:    NewPosition(3, mat.NewVecDense(2, []float64{3, 0})),
-						Connections: []int{2, 4},
+						position:    NewPosition(3, mat.NewVecDense(2, []float64{3, 0})),
+						connections: []int{2, 4},
 					},
 					{
-						Position:    NewPosition(2, mat.NewVecDense(2, []float64{2, 0})),
-						Connections: []int{1, 3},
+						position:    NewPosition(2, mat.NewVecDense(2, []float64{2, 0})),
+						connections: []int{1, 3},
 					},
 					{
-						Position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
-						Connections: []int{4},
+						position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
+						connections: []int{4},
 					},
 					{
-						Position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-						Connections: []int{1},
+						position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
+						connections: []int{1},
 					},
 					{
-						Position:    NewPosition(1, mat.NewVecDense(2, []float64{1, 0})),
-						Connections: []int{0, 2},
+						position:    NewPosition(1, mat.NewVecDense(2, []float64{1, 0})),
+						connections: []int{0, 2},
 					},
 					{
-						Position:    NewPosition(4, mat.NewVecDense(2, []float64{4, 0})),
-						Connections: []int{3, 5},
+						position:    NewPosition(4, mat.NewVecDense(2, []float64{4, 0})),
+						connections: []int{3, 5},
 					},
 					{
-						Position:    NewPosition(7, mat.NewVecDense(2, []float64{9, 0})),
-						Connections: []int{3, 5},
+						position:    NewPosition(7, mat.NewVecDense(2, []float64{9, 0})),
+						connections: []int{3, 5},
 					},
 					{
-						Position:    NewPosition(6, mat.NewVecDense(2, []float64{2000, 0})),
-						Connections: []int{3, 5},
+						position:    NewPosition(6, mat.NewVecDense(2, []float64{2000, 0})),
+						connections: []int{3, 5},
 					},
 					{
-						Position:    NewPosition(8, mat.NewVecDense(2, []float64{121, 0})),
-						Connections: []int{3, 5},
+						position:    NewPosition(8, mat.NewVecDense(2, []float64{121, 0})),
+						connections: []int{3, 5},
 					},
 				}),
 			key1: 5,
@@ -431,31 +413,31 @@ func TestResultGraph(t *testing.T) {
 			vertexes: NewVertexes(
 				[]*Vertex{
 					{
-						Position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
-						Connections: []int{4},
+						position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
+						connections: []int{4},
 					},
 					{
-						Position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-						Connections: []int{1},
+						position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
+						connections: []int{1},
 					},
 					{
-						Position:    NewPosition(1, mat.NewVecDense(2, []float64{1, 0})),
-						Connections: []int{0, 2},
+						position:    NewPosition(1, mat.NewVecDense(2, []float64{1, 0})),
+						connections: []int{0, 2},
 					},
 					{
-						Position:    NewPosition(2, mat.NewVecDense(2, []float64{2, 0})),
-						Connections: []int{1, 3},
+						position:    NewPosition(2, mat.NewVecDense(2, []float64{2, 0})),
+						connections: []int{1, 3},
 					},
 					{
-						Position:    NewPosition(4, mat.NewVecDense(2, []float64{4, 0})),
-						Connections: []int{3, 5},
+						position:    NewPosition(4, mat.NewVecDense(2, []float64{4, 0})),
+						connections: []int{3, 5},
 					},
 					{
-						Position:    NewPosition(3, mat.NewVecDense(2, []float64{3, 0})),
-						Connections: []int{2, 4},
+						position:    NewPosition(3, mat.NewVecDense(2, []float64{3, 0})),
+						connections: []int{2, 4},
 					},
 				}),
-			result: Path{Visited: map[int]*node{}, TotalDistance: 5},
+			result: Path{TotalDistance: 5},
 			st:     0,
 			fn:     5,
 		},
@@ -464,31 +446,31 @@ func TestResultGraph(t *testing.T) {
 			vertexes: NewVertexes(
 				[]*Vertex{
 					{
-						Position:    NewPosition(5, mat.NewVecDense(2, []float64{0, 1})),
-						Connections: []int{4, 0},
+						position:    NewPosition(5, mat.NewVecDense(2, []float64{0, 1})),
+						connections: []int{4, 0},
 					},
 					{
-						Position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-						Connections: []int{1, 5},
+						position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
+						connections: []int{1, 5},
 					},
 					{
-						Position:    NewPosition(1, mat.NewVecDense(2, []float64{1, 0})),
-						Connections: []int{0, 2},
+						position:    NewPosition(1, mat.NewVecDense(2, []float64{1, 0})),
+						connections: []int{0, 2},
 					},
 					{
-						Position:    NewPosition(2, mat.NewVecDense(2, []float64{2, 0})),
-						Connections: []int{1, 3},
+						position:    NewPosition(2, mat.NewVecDense(2, []float64{2, 0})),
+						connections: []int{1, 3},
 					},
 					{
-						Position:    NewPosition(4, mat.NewVecDense(2, []float64{4, 0})),
-						Connections: []int{3, 5},
+						position:    NewPosition(4, mat.NewVecDense(2, []float64{4, 0})),
+						connections: []int{3, 5},
 					},
 					{
-						Position:    NewPosition(3, mat.NewVecDense(2, []float64{3, 0})),
-						Connections: []int{2, 4},
+						position:    NewPosition(3, mat.NewVecDense(2, []float64{3, 0})),
+						connections: []int{2, 4},
 					},
 				}),
-			result: Path{Visited: map[int]*node{}, TotalDistance: 1},
+			result: Path{TotalDistance: 1},
 			st:     0,
 			fn:     5,
 		},
@@ -497,67 +479,67 @@ func TestResultGraph(t *testing.T) {
 			vertexes: NewVertexes(
 				[]*Vertex{
 					{
-						Position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-						Connections: []int{1, 5, 11},
+						position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
+						connections: []int{1, 5, 11},
 					},
 					{
-						Position:    NewPosition(1, mat.NewVecDense(2, []float64{10, 0})),
-						Connections: []int{0, 2},
+						position:    NewPosition(1, mat.NewVecDense(2, []float64{10, 0})),
+						connections: []int{0, 2},
 					},
 					{
-						Position:    NewPosition(2, mat.NewVecDense(2, []float64{20, 0})),
-						Connections: []int{1, 3},
+						position:    NewPosition(2, mat.NewVecDense(2, []float64{20, 0})),
+						connections: []int{1, 3},
 					},
 					{
-						Position:    NewPosition(3, mat.NewVecDense(2, []float64{30, 0})),
-						Connections: []int{2, 4},
+						position:    NewPosition(3, mat.NewVecDense(2, []float64{30, 0})),
+						connections: []int{2, 4},
 					},
 					{
-						Position:    NewPosition(4, mat.NewVecDense(2, []float64{40, 0})),
-						Connections: []int{3, 5},
+						position:    NewPosition(4, mat.NewVecDense(2, []float64{40, 0})),
+						connections: []int{3, 5},
 					},
 					{
-						Position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
-						Connections: []int{4, 6, 11, 0},
+						position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
+						connections: []int{4, 6, 11, 0},
 					},
 					{
-						Position:    NewPosition(6, mat.NewVecDense(2, []float64{60, 0})),
-						Connections: []int{5, 7},
+						position:    NewPosition(6, mat.NewVecDense(2, []float64{60, 0})),
+						connections: []int{5, 7},
 					},
 					{
-						Position:    NewPosition(7, mat.NewVecDense(2, []float64{70, 0})),
-						Connections: []int{6, 8},
+						position:    NewPosition(7, mat.NewVecDense(2, []float64{70, 0})),
+						connections: []int{6, 8},
 					},
 					{
-						Position:    NewPosition(8, mat.NewVecDense(2, []float64{80, 0})),
-						Connections: []int{7, 9},
+						position:    NewPosition(8, mat.NewVecDense(2, []float64{80, 0})),
+						connections: []int{7, 9},
 					},
 					{
-						Position:    NewPosition(9, mat.NewVecDense(2, []float64{90, 0})),
-						Connections: []int{7, 10, 12, 14},
+						position:    NewPosition(9, mat.NewVecDense(2, []float64{90, 0})),
+						connections: []int{7, 10, 12, 14},
 					},
 					{
-						Position:    NewPosition(10, mat.NewVecDense(2, []float64{5, 5})),
-						Connections: []int{9, 14, 11},
+						position:    NewPosition(10, mat.NewVecDense(2, []float64{5, 5})),
+						connections: []int{9, 14, 11},
 					},
 					{
-						Position:    NewPosition(11, mat.NewVecDense(2, []float64{0, 5})),
-						Connections: []int{0, 5, 12, 10},
+						position:    NewPosition(11, mat.NewVecDense(2, []float64{0, 5})),
+						connections: []int{0, 5, 12, 10},
 					},
 					{
-						Position:    NewPosition(12, mat.NewVecDense(2, []float64{0, 20})),
-						Connections: []int{11, 9},
+						position:    NewPosition(12, mat.NewVecDense(2, []float64{0, 20})),
+						connections: []int{11, 9},
 					},
 					{
-						Position:    NewPosition(13, mat.NewVecDense(2, []float64{0, 30})),
-						Connections: []int{12, 14},
+						position:    NewPosition(13, mat.NewVecDense(2, []float64{0, 30})),
+						connections: []int{12, 14},
 					},
 					{
-						Position:    NewPosition(14, mat.NewVecDense(2, []float64{0, 40})),
-						Connections: []int{13, 9, 10},
+						position:    NewPosition(14, mat.NewVecDense(2, []float64{0, 40})),
+						connections: []int{13, 9, 10},
 					},
 				}),
-			result: Path{Visited: map[int]*node{}, TotalDistance: 10},
+			result: Path{TotalDistance: 10},
 			st:     0,
 			fn:     10,
 		},
@@ -585,111 +567,119 @@ var vertex = struct {
 	vertexes: NewVertexes(
 		[]*Vertex{
 			{
-				Position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-				Connections: []int{1, 5, 11},
+				position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
+				connections: []int{1, 5, 11},
 			},
 			{
-				Position:    NewPosition(1, mat.NewVecDense(2, []float64{10, 0})),
-				Connections: []int{0, 2},
+				position:    NewPosition(1, mat.NewVecDense(2, []float64{10, 0})),
+				connections: []int{0, 2},
 			},
 			{
-				Position:    NewPosition(2, mat.NewVecDense(2, []float64{20, 0})),
-				Connections: []int{1, 3},
+				position:    NewPosition(2, mat.NewVecDense(2, []float64{20, 0})),
+				connections: []int{1, 3},
 			},
 			{
-				Position:    NewPosition(3, mat.NewVecDense(2, []float64{30, 0})),
-				Connections: []int{2, 4},
+				position:    NewPosition(3, mat.NewVecDense(2, []float64{30, 0})),
+				connections: []int{2, 4},
 			},
 			{
-				Position:    NewPosition(4, mat.NewVecDense(2, []float64{40, 0})),
-				Connections: []int{3, 5},
+				position:    NewPosition(4, mat.NewVecDense(2, []float64{40, 0})),
+				connections: []int{3, 5},
 			},
 			{
-				Position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
-				Connections: []int{4, 6, 11, 0},
+				position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
+				connections: []int{4, 6, 11, 0},
 			},
 			{
-				Position:    NewPosition(6, mat.NewVecDense(2, []float64{60, 0})),
-				Connections: []int{5, 7},
+				position:    NewPosition(6, mat.NewVecDense(2, []float64{60, 0})),
+				connections: []int{5, 7},
 			},
 			{
-				Position:    NewPosition(7, mat.NewVecDense(2, []float64{70, 0})),
-				Connections: []int{6, 8},
+				position:    NewPosition(7, mat.NewVecDense(2, []float64{70, 0})),
+				connections: []int{6, 8},
 			},
 			{
-				Position:    NewPosition(8, mat.NewVecDense(2, []float64{80, 0})),
-				Connections: []int{7, 9},
+				position:    NewPosition(8, mat.NewVecDense(2, []float64{80, 0})),
+				connections: []int{7, 9},
 			},
 			{
-				Position:    NewPosition(9, mat.NewVecDense(2, []float64{90, 0})),
-				Connections: []int{7, 10, 12, 14},
+				position:    NewPosition(9, mat.NewVecDense(2, []float64{90, 0})),
+				connections: []int{7, 10, 12, 14},
 			},
 			{
-				Position:    NewPosition(10, mat.NewVecDense(2, []float64{5, 5})),
-				Connections: []int{9, 14, 11},
+				position:    NewPosition(10, mat.NewVecDense(2, []float64{5, 5})),
+				connections: []int{9, 14, 11},
 			},
 			{
-				Position:    NewPosition(11, mat.NewVecDense(2, []float64{0, 5})),
-				Connections: []int{0, 5, 12, 10},
+				position:    NewPosition(11, mat.NewVecDense(2, []float64{0, 5})),
+				connections: []int{0, 5, 12, 10},
 			},
 			{
-				Position:    NewPosition(12, mat.NewVecDense(2, []float64{0, 20})),
-				Connections: []int{11, 9},
+				position:    NewPosition(12, mat.NewVecDense(2, []float64{0, 20})),
+				connections: []int{11, 9},
 			},
 			{
-				Position:    NewPosition(13, mat.NewVecDense(2, []float64{0, 30})),
-				Connections: []int{12, 14},
+				position:    NewPosition(13, mat.NewVecDense(2, []float64{0, 30})),
+				connections: []int{12, 14},
 			},
 			{
-				Position:    NewPosition(14, mat.NewVecDense(2, []float64{0, 40})),
-				Connections: []int{13, 9, 10},
+				position:    NewPosition(14, mat.NewVecDense(2, []float64{0, 40})),
+				connections: []int{13, 9, 10},
 			},
 		}),
 }
 
 var benchcases = []struct {
 	st, fn int
+	dst    float64
 }{
 	{
-		st: 0,
-		fn: 10,
+		st:  0,
+		fn:  10,
+		dst: 10,
 	},
 	{
-		st: 0,
-		fn: 14,
+		st:  0,
+		fn:  14,
+		dst: 45.35533905932738,
 	},
 	{
-		st: 0,
-		fn: 7,
+		st:  0,
+		fn:  7,
+		dst: 70,
 	},
 	{
-		st: 0,
-		fn: 13,
+		st:  0,
+		fn:  13,
+		dst: 55.35533905932738,
 	},
 	{
-		st: 0,
-		fn: 11,
+		st:  0,
+		fn:  11,
+		dst: 5,
 	},
 	{
-		st: 0,
-		fn: 12,
+		st:  0,
+		fn:  12,
+		dst: 20,
 	},
 	{
-		st: 0,
-		fn: 13,
+		st:  0,
+		fn:  13,
+		dst: 55.35533905932738,
 	},
 	{
-		st: 0,
-		fn: 6,
+		st:  0,
+		fn:  6,
+		dst: 60,
 	},
 }
 
 func BenchmarkGraph_CalculateResultGraphFromPosition(b *testing.B) {
-
 	asr := assert.New(b)
+	g := NewGraph(vertex.vertexes)
 	for n := 0; n < b.N; n++ {
 		for _, c := range benchcases {
-			g := NewGraph(vertex.vertexes)
 			_, err := g.CalculateResultGraphFromPosition(vertex.vertexes.GetPositionByKey(c.st), vertex.vertexes.GetPositionByKey(c.fn))
 			asr.Equal(err, nil, "error should be nil")
 		}
@@ -698,10 +688,11 @@ func BenchmarkGraph_CalculateResultGraphFromPosition(b *testing.B) {
 
 func BenchmarkGraph_CalculateResultGraphFromKeys(b *testing.B) {
 	asr := assert.New(b)
+	g := NewGraph(vertex.vertexes)
 	for n := 0; n < b.N; n++ {
 		for _, c := range benchcases {
-			g := NewGraph(vertex.vertexes)
-			_, err := g.CalculateResultGraphFromKeys(c.st, c.fn)
+			d, err := g.CalculateResultGraphFromKeys(c.st, c.fn)
+			asr.Equal(d.TotalDistance, c.dst, "total distance is incorrect")
 			asr.Equal(err, nil, "error should be nil")
 		}
 	}
