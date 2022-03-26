@@ -257,7 +257,6 @@ func TestNodesCreation(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
-
 			// when
 			nodes := make([]*node, 0, len(c.graph))
 			for i, g := range c.graph {
@@ -424,7 +423,7 @@ func TestResultGraph(t *testing.T) {
 	cases := []struct {
 		title    string
 		vertexes *Vertexes
-		result   ResultGraph
+		result   Path
 		st, fn   int
 	}{
 		{
@@ -456,7 +455,7 @@ func TestResultGraph(t *testing.T) {
 						Connections: []int{2, 4},
 					},
 				}),
-			result: ResultGraph{Visited: map[int]*node{}, TotalDistance: 5},
+			result: Path{Visited: map[int]*node{}, TotalDistance: 5},
 			st:     0,
 			fn:     5,
 		},
@@ -489,7 +488,7 @@ func TestResultGraph(t *testing.T) {
 						Connections: []int{2, 4},
 					},
 				}),
-			result: ResultGraph{Visited: map[int]*node{}, TotalDistance: 1},
+			result: Path{Visited: map[int]*node{}, TotalDistance: 1},
 			st:     0,
 			fn:     5,
 		},
@@ -558,7 +557,7 @@ func TestResultGraph(t *testing.T) {
 						Connections: []int{13, 9, 10},
 					},
 				}),
-			result: ResultGraph{Visited: map[int]*node{}, TotalDistance: 10},
+			result: Path{Visited: map[int]*node{}, TotalDistance: 10},
 			st:     0,
 			fn:     10,
 		},
@@ -568,14 +567,142 @@ func TestResultGraph(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
-			g := NewGraph(*c.vertexes)
+			g := NewGraph(c.vertexes)
 			result, err := g.CalculateResultGraphFromPosition(c.vertexes.GetPositionByKey(c.st), c.vertexes.GetPositionByKey(c.fn))
 			asr.Equal(nil, err, "error should be nil")
 			asr.Equal(c.result.TotalDistance, result.TotalDistance, "total distance isn't correct")
-			g = NewGraph(*c.vertexes)
+			g = NewGraph(c.vertexes)
 			result, err = g.CalculateResultGraphFromKeys(c.st, c.fn)
 			asr.Equal(nil, err, "error should be nil")
 			asr.Equal(c.result.TotalDistance, result.TotalDistance, "total distance isn't correct")
 		})
+	}
+}
+
+var vertex = struct {
+	vertexes *Vertexes
+}{
+	vertexes: NewVertexes(
+		[]*Vertex{
+			{
+				Position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
+				Connections: []int{1, 5, 11},
+			},
+			{
+				Position:    NewPosition(1, mat.NewVecDense(2, []float64{10, 0})),
+				Connections: []int{0, 2},
+			},
+			{
+				Position:    NewPosition(2, mat.NewVecDense(2, []float64{20, 0})),
+				Connections: []int{1, 3},
+			},
+			{
+				Position:    NewPosition(3, mat.NewVecDense(2, []float64{30, 0})),
+				Connections: []int{2, 4},
+			},
+			{
+				Position:    NewPosition(4, mat.NewVecDense(2, []float64{40, 0})),
+				Connections: []int{3, 5},
+			},
+			{
+				Position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
+				Connections: []int{4, 6, 11, 0},
+			},
+			{
+				Position:    NewPosition(6, mat.NewVecDense(2, []float64{60, 0})),
+				Connections: []int{5, 7},
+			},
+			{
+				Position:    NewPosition(7, mat.NewVecDense(2, []float64{70, 0})),
+				Connections: []int{6, 8},
+			},
+			{
+				Position:    NewPosition(8, mat.NewVecDense(2, []float64{80, 0})),
+				Connections: []int{7, 9},
+			},
+			{
+				Position:    NewPosition(9, mat.NewVecDense(2, []float64{90, 0})),
+				Connections: []int{7, 10, 12, 14},
+			},
+			{
+				Position:    NewPosition(10, mat.NewVecDense(2, []float64{5, 5})),
+				Connections: []int{9, 14, 11},
+			},
+			{
+				Position:    NewPosition(11, mat.NewVecDense(2, []float64{0, 5})),
+				Connections: []int{0, 5, 12, 10},
+			},
+			{
+				Position:    NewPosition(12, mat.NewVecDense(2, []float64{0, 20})),
+				Connections: []int{11, 9},
+			},
+			{
+				Position:    NewPosition(13, mat.NewVecDense(2, []float64{0, 30})),
+				Connections: []int{12, 14},
+			},
+			{
+				Position:    NewPosition(14, mat.NewVecDense(2, []float64{0, 40})),
+				Connections: []int{13, 9, 10},
+			},
+		}),
+}
+
+var benchcases = []struct {
+	st, fn int
+}{
+	{
+		st: 0,
+		fn: 10,
+	},
+	{
+		st: 0,
+		fn: 14,
+	},
+	{
+		st: 0,
+		fn: 7,
+	},
+	{
+		st: 0,
+		fn: 13,
+	},
+	{
+		st: 0,
+		fn: 11,
+	},
+	{
+		st: 0,
+		fn: 12,
+	},
+	{
+		st: 0,
+		fn: 13,
+	},
+	{
+		st: 0,
+		fn: 6,
+	},
+}
+
+func BenchmarkGraph_CalculateResultGraphFromPosition(b *testing.B) {
+
+	asr := assert.New(b)
+	for n := 0; n < b.N; n++ {
+		for _, c := range benchcases {
+			g := NewGraph(vertex.vertexes)
+			_, err := g.CalculateResultGraphFromPosition(vertex.vertexes.GetPositionByKey(c.st), vertex.vertexes.GetPositionByKey(c.fn))
+			asr.Equal(err, nil, "error should be nil")
+		}
+	}
+}
+
+func BenchmarkGraph_CalculateResultGraphFromKeys(b *testing.B) {
+	asr := assert.New(b)
+	for n := 0; n < b.N; n++ {
+		for _, c := range benchcases {
+			g := NewGraph(vertex.vertexes)
+			_, err := g.CalculateResultGraphFromKeys(c.st, c.fn)
+			asr.Equal(err, nil, "error should be nil")
+		}
 	}
 }
