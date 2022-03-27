@@ -2,27 +2,27 @@ package djikstra
 
 import "gonum.org/v1/gonum/mat"
 
-// vertex describes position in multidimensional space
-type vertex struct {
-	key         int
-	position    []float64
+// Vertex describes position in multidimensional space
+type Vertex struct {
 	connections []int
+	position    []float64
+	key         int
 }
 
-// NewVertex creates instance of vertex implementing vertexer interface
-func NewVertex(key int, position []float64, connections []int) *vertex {
-	return &vertex{key, position, connections}
+// NewVertex creates instance of Vertex implementing vertexer interface
+func NewVertex(key int, position []float64, connections []int) *Vertex {
+	return &Vertex{connections, position, key}
 }
 
-func (v vertex) GetKey() int {
+func (v Vertex) GetKey() int {
 	return v.key
 }
 
-func (v vertex) GetPosition() []float64 {
+func (v Vertex) GetPosition() []float64 {
 	return v.position
 }
 
-func (v vertex) GetDistance(np Positioner) float64 {
+func (v Vertex) GetDistance(np Positioner) float64 {
 	p := np.GetPosition()
 	vec1 := mat.NewVecDense(len(v.position), v.position)
 	vec2 := mat.NewVecDense(len(p), p)
@@ -31,6 +31,6 @@ func (v vertex) GetDistance(np Positioner) float64 {
 	return rv.Norm(2)
 }
 
-func (v vertex) GetConnections() []int {
+func (v Vertex) GetConnections() []int {
 	return v.connections
 }
