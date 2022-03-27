@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"gonum.org/v1/gonum/mat"
+	"golang.org/x/exp/rand"
 )
 
 func TestDistanceCalculation(t *testing.T) {
@@ -103,11 +103,11 @@ func TestDistanceCalculation(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			// when
-			p1 := NewPosition(1, mat.NewVecDense(len(c.points[0]), c.points[0]))
-			p2 := NewPosition(2, mat.NewVecDense(len(c.points[1]), c.points[1]))
+			p1 := NewVertex(1, c.points[0], []int{})
+			p2 := NewVertex(2, c.points[1], []int{})
 
 			// then
-			dist := p1.getDistance(p2)
+			dist := p1.GetDistance(p2)
 			asr.Equal(c.distance, dist, fmt.Sprintf("Expected %v, got %v", c.distance, dist))
 		})
 	}
@@ -254,13 +254,12 @@ func TestNodesCreation(t *testing.T) {
 	}
 
 	asr := assert.New(t)
-
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			// when
 			nodes := make([]*node, 0, len(c.graph))
 			for i, g := range c.graph {
-				ps := NewPosition(i, mat.NewVecDense(len(g.pos), g.pos))
+				ps := NewVertex(i, g.pos, []int{})
 				n := newStartNode(ps)
 				nodes = append(nodes, n)
 			}
@@ -273,7 +272,7 @@ func TestNodesCreation(t *testing.T) {
 			for i, n := range nodes {
 				poss := make([]int, 0)
 				for nn := range n.neighbours {
-					poss = append(poss, nn.vertex.key)
+					poss = append(poss, nn.vertex.GetKey())
 				}
 				sort.Ints(poss)
 				conn := c.graph[i].conn
@@ -284,264 +283,63 @@ func TestNodesCreation(t *testing.T) {
 	}
 }
 
-func TestVertexesGetPositionByKey(t *testing.T) {
-	cases := []struct {
-		title      string
-		vertexes   *Vertexes
-		key1, key2 int
-		p1, p2     *Position
-	}{
-		{
-			title: "small simple one way graph",
-			vertexes: NewVertexes(
-				[]*Vertex{
-					NewVertex(NewPosition(5, mat.NewVecDense(2, []float64{5, 0})), []int{4}),
-					NewVertex(NewPosition(0, mat.NewVecDense(2, []float64{0, 0})), []int{1}),
-					NewVertex(NewPosition(1, mat.NewVecDense(2, []float64{1, 0})), []int{0, 2}),
-					NewVertex(NewPosition(2, mat.NewVecDense(2, []float64{2, 0})), []int{1, 3}),
-					NewVertex(NewPosition(4, mat.NewVecDense(2, []float64{4, 0})), []int{3, 5}),
-					NewVertex(NewPosition(3, mat.NewVecDense(2, []float64{3, 0})), []int{2, 4}),
-				}),
-			key1: 0,
-			key2: 5,
-			p1:   NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-			p2:   NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
-		},
-		{
-			title: "small simple graph shuffle",
-			vertexes: NewVertexes(
-				[]*Vertex{
-					{
-						position:    NewPosition(3, mat.NewVecDense(2, []float64{3, 0})),
-						connections: []int{2, 4},
-					},
-					{
-						position:    NewPosition(2, mat.NewVecDense(2, []float64{2, 0})),
-						connections: []int{1, 3},
-					},
-					{
-						position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
-						connections: []int{4},
-					},
-					{
-						position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-						connections: []int{1},
-					},
-					{
-						position:    NewPosition(1, mat.NewVecDense(2, []float64{1, 0})),
-						connections: []int{0, 2},
-					},
-					{
-						position:    NewPosition(4, mat.NewVecDense(2, []float64{4, 0})),
-						connections: []int{3, 5},
-					},
-				}),
-			key1: 0,
-			key2: 5,
-			p1:   NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-			p2:   NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
-		},
-		{
-			title: "bigger simple shuffle graph",
-			vertexes: NewVertexes(
-				[]*Vertex{
-					{
-						position:    NewPosition(3, mat.NewVecDense(2, []float64{3, 0})),
-						connections: []int{2, 4},
-					},
-					{
-						position:    NewPosition(2, mat.NewVecDense(2, []float64{2, 0})),
-						connections: []int{1, 3},
-					},
-					{
-						position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
-						connections: []int{4},
-					},
-					{
-						position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-						connections: []int{1},
-					},
-					{
-						position:    NewPosition(1, mat.NewVecDense(2, []float64{1, 0})),
-						connections: []int{0, 2},
-					},
-					{
-						position:    NewPosition(4, mat.NewVecDense(2, []float64{4, 0})),
-						connections: []int{3, 5},
-					},
-					{
-						position:    NewPosition(7, mat.NewVecDense(2, []float64{9, 0})),
-						connections: []int{3, 5},
-					},
-					{
-						position:    NewPosition(6, mat.NewVecDense(2, []float64{2000, 0})),
-						connections: []int{3, 5},
-					},
-					{
-						position:    NewPosition(8, mat.NewVecDense(2, []float64{121, 0})),
-						connections: []int{3, 5},
-					},
-				}),
-			key1: 5,
-			key2: 8,
-			p1:   NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
-			p2:   NewPosition(8, mat.NewVecDense(2, []float64{121, 0})),
-		},
-	}
-
-	asr := assert.New(t)
-
-	for _, c := range cases {
-		t.Run(c.title, func(t *testing.T) {
-			p1 := c.vertexes.GetPositionByKey(c.key1)
-			p2 := c.vertexes.GetPositionByKey(c.key2)
-			asr.Equal(c.p1, p1, "wrong position selected")
-			asr.Equal(c.p2, p2, "wrong position selected")
-		})
-	}
-}
-
 func TestResultGraph(t *testing.T) {
 	cases := []struct {
 		title    string
-		vertexes *Vertexes
+		vertexes []Vertexer
 		result   Path
-		st, fn   int
+		st, fn   Vertexer
 	}{
 		{
 			title: "small simple one way graph",
-			vertexes: NewVertexes(
-				[]*Vertex{
-					{
-						position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
-						connections: []int{4},
-					},
-					{
-						position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-						connections: []int{1},
-					},
-					{
-						position:    NewPosition(1, mat.NewVecDense(2, []float64{1, 0})),
-						connections: []int{0, 2},
-					},
-					{
-						position:    NewPosition(2, mat.NewVecDense(2, []float64{2, 0})),
-						connections: []int{1, 3},
-					},
-					{
-						position:    NewPosition(4, mat.NewVecDense(2, []float64{4, 0})),
-						connections: []int{3, 5},
-					},
-					{
-						position:    NewPosition(3, mat.NewVecDense(2, []float64{3, 0})),
-						connections: []int{2, 4},
-					},
-				}),
-			result: Path{TotalDistance: 5},
-			st:     0,
-			fn:     5,
+			vertexes: []Vertexer{
+				NewVertex(5, []float64{5, 0}, []int{4}),
+				NewVertex(0, []float64{0, 0}, []int{1}),
+				NewVertex(1, []float64{1, 0}, []int{0, 2}),
+				NewVertex(2, []float64{2, 0}, []int{1, 3}),
+				NewVertex(4, []float64{4, 0}, []int{3, 5}),
+				NewVertex(3, []float64{3, 0}, []int{2, 4}),
+			},
+			result: Path{TotalDistance: 3},
+			st:     NewVertex(0, []float64{0, 0}, []int{1}),
+			fn:     NewVertex(3, []float64{3, 0}, []int{2, 4}),
 		},
 		{
 			title: "small circular graph",
-			vertexes: NewVertexes(
-				[]*Vertex{
-					{
-						position:    NewPosition(5, mat.NewVecDense(2, []float64{0, 1})),
-						connections: []int{4, 0},
-					},
-					{
-						position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-						connections: []int{1, 5},
-					},
-					{
-						position:    NewPosition(1, mat.NewVecDense(2, []float64{1, 0})),
-						connections: []int{0, 2},
-					},
-					{
-						position:    NewPosition(2, mat.NewVecDense(2, []float64{2, 0})),
-						connections: []int{1, 3},
-					},
-					{
-						position:    NewPosition(4, mat.NewVecDense(2, []float64{4, 0})),
-						connections: []int{3, 5},
-					},
-					{
-						position:    NewPosition(3, mat.NewVecDense(2, []float64{3, 0})),
-						connections: []int{2, 4},
-					},
-				}),
+			vertexes: []Vertexer{
+				NewVertex(5, []float64{0, 1}, []int{4, 0}),
+				NewVertex(0, []float64{0, 0}, []int{1, 5}),
+				NewVertex(1, []float64{1, 0}, []int{0, 2}),
+				NewVertex(2, []float64{2, 0}, []int{1, 3}),
+				NewVertex(4, []float64{4, 0}, []int{3, 5}),
+				NewVertex(3, []float64{3, 0}, []int{2, 4}),
+			},
 			result: Path{TotalDistance: 1},
-			st:     0,
-			fn:     5,
+			st:     NewVertex(0, []float64{0, 0}, []int{1, 5}),
+			fn:     NewVertex(5, []float64{0, 1}, []int{4, 0}),
 		},
 		{
 			title: "large graph",
-			vertexes: NewVertexes(
-				[]*Vertex{
-					{
-						position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-						connections: []int{1, 5, 11},
-					},
-					{
-						position:    NewPosition(1, mat.NewVecDense(2, []float64{10, 0})),
-						connections: []int{0, 2},
-					},
-					{
-						position:    NewPosition(2, mat.NewVecDense(2, []float64{20, 0})),
-						connections: []int{1, 3},
-					},
-					{
-						position:    NewPosition(3, mat.NewVecDense(2, []float64{30, 0})),
-						connections: []int{2, 4},
-					},
-					{
-						position:    NewPosition(4, mat.NewVecDense(2, []float64{40, 0})),
-						connections: []int{3, 5},
-					},
-					{
-						position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
-						connections: []int{4, 6, 11, 0},
-					},
-					{
-						position:    NewPosition(6, mat.NewVecDense(2, []float64{60, 0})),
-						connections: []int{5, 7},
-					},
-					{
-						position:    NewPosition(7, mat.NewVecDense(2, []float64{70, 0})),
-						connections: []int{6, 8},
-					},
-					{
-						position:    NewPosition(8, mat.NewVecDense(2, []float64{80, 0})),
-						connections: []int{7, 9},
-					},
-					{
-						position:    NewPosition(9, mat.NewVecDense(2, []float64{90, 0})),
-						connections: []int{7, 10, 12, 14},
-					},
-					{
-						position:    NewPosition(10, mat.NewVecDense(2, []float64{5, 5})),
-						connections: []int{9, 14, 11},
-					},
-					{
-						position:    NewPosition(11, mat.NewVecDense(2, []float64{0, 5})),
-						connections: []int{0, 5, 12, 10},
-					},
-					{
-						position:    NewPosition(12, mat.NewVecDense(2, []float64{0, 20})),
-						connections: []int{11, 9},
-					},
-					{
-						position:    NewPosition(13, mat.NewVecDense(2, []float64{0, 30})),
-						connections: []int{12, 14},
-					},
-					{
-						position:    NewPosition(14, mat.NewVecDense(2, []float64{0, 40})),
-						connections: []int{13, 9, 10},
-					},
-				}),
+			vertexes: []Vertexer{
+				NewVertex(0, []float64{0, 0}, []int{1, 5, 11}),
+				NewVertex(1, []float64{10, 0}, []int{0, 2}),
+				NewVertex(2, []float64{20, 0}, []int{1, 3}),
+				NewVertex(3, []float64{30, 0}, []int{2, 4}),
+				NewVertex(4, []float64{40, 0}, []int{3, 5}),
+				NewVertex(5, []float64{5, 0}, []int{4, 6, 11, 0}),
+				NewVertex(6, []float64{60, 0}, []int{5, 7}),
+				NewVertex(7, []float64{70, 0}, []int{6, 8}),
+				NewVertex(8, []float64{80, 0}, []int{7, 9}),
+				NewVertex(9, []float64{90, 0}, []int{7, 10, 12, 14}),
+				NewVertex(10, []float64{5, 5}, []int{9, 14, 11}),
+				NewVertex(11, []float64{0, 5}, []int{0, 5, 12, 10}),
+				NewVertex(12, []float64{0, 20}, []int{11, 9}),
+				NewVertex(13, []float64{0, 30}, []int{12, 14}),
+				NewVertex(14, []float64{0, 40}, []int{13, 9, 10}),
+			},
 			result: Path{TotalDistance: 10},
-			st:     0,
-			fn:     10,
+			st:     NewVertex(0, []float64{0, 0}, []int{1, 5, 11}),
+			fn:     NewVertex(10, []float64{5, 5}, []int{9, 14, 11}),
 		},
 	}
 
@@ -550,150 +348,110 @@ func TestResultGraph(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			g := NewGraph(c.vertexes)
-			result, err := g.CalculateResultGraphFromPosition(c.vertexes.GetPositionByKey(c.st), c.vertexes.GetPositionByKey(c.fn))
-			asr.Equal(nil, err, "error should be nil")
-			asr.Equal(c.result.TotalDistance, result.TotalDistance, "total distance isn't correct")
-			g = NewGraph(c.vertexes)
-			result, err = g.CalculateResultGraphFromKeys(c.st, c.fn)
+			result, err := g.CalculateResultGraph(c.st, c.fn)
 			asr.Equal(nil, err, "error should be nil")
 			asr.Equal(c.result.TotalDistance, result.TotalDistance, "total distance isn't correct")
 		})
 	}
 }
 
-var vertex = struct {
-	vertexes *Vertexes
-}{
-	vertexes: NewVertexes(
-		[]*Vertex{
-			{
-				position:    NewPosition(0, mat.NewVecDense(2, []float64{0, 0})),
-				connections: []int{1, 5, 11},
-			},
-			{
-				position:    NewPosition(1, mat.NewVecDense(2, []float64{10, 0})),
-				connections: []int{0, 2},
-			},
-			{
-				position:    NewPosition(2, mat.NewVecDense(2, []float64{20, 0})),
-				connections: []int{1, 3},
-			},
-			{
-				position:    NewPosition(3, mat.NewVecDense(2, []float64{30, 0})),
-				connections: []int{2, 4},
-			},
-			{
-				position:    NewPosition(4, mat.NewVecDense(2, []float64{40, 0})),
-				connections: []int{3, 5},
-			},
-			{
-				position:    NewPosition(5, mat.NewVecDense(2, []float64{5, 0})),
-				connections: []int{4, 6, 11, 0},
-			},
-			{
-				position:    NewPosition(6, mat.NewVecDense(2, []float64{60, 0})),
-				connections: []int{5, 7},
-			},
-			{
-				position:    NewPosition(7, mat.NewVecDense(2, []float64{70, 0})),
-				connections: []int{6, 8},
-			},
-			{
-				position:    NewPosition(8, mat.NewVecDense(2, []float64{80, 0})),
-				connections: []int{7, 9},
-			},
-			{
-				position:    NewPosition(9, mat.NewVecDense(2, []float64{90, 0})),
-				connections: []int{7, 10, 12, 14},
-			},
-			{
-				position:    NewPosition(10, mat.NewVecDense(2, []float64{5, 5})),
-				connections: []int{9, 14, 11},
-			},
-			{
-				position:    NewPosition(11, mat.NewVecDense(2, []float64{0, 5})),
-				connections: []int{0, 5, 12, 10},
-			},
-			{
-				position:    NewPosition(12, mat.NewVecDense(2, []float64{0, 20})),
-				connections: []int{11, 9},
-			},
-			{
-				position:    NewPosition(13, mat.NewVecDense(2, []float64{0, 30})),
-				connections: []int{12, 14},
-			},
-			{
-				position:    NewPosition(14, mat.NewVecDense(2, []float64{0, 40})),
-				connections: []int{13, 9, 10},
-			},
-		}),
+var vertexes = []Vertexer{
+	NewVertex(0, []float64{0, 0}, []int{1, 5, 11}),
+	NewVertex(1, []float64{10, 0}, []int{0, 2}),
+	NewVertex(2, []float64{20, 0}, []int{1, 3}),
+	NewVertex(3, []float64{30, 0}, []int{2, 4}),
+	NewVertex(4, []float64{40, 0}, []int{3, 5}),
+	NewVertex(5, []float64{5, 0}, []int{4, 6, 11, 0}),
+	NewVertex(6, []float64{60, 0}, []int{5, 7}),
+	NewVertex(7, []float64{70, 0}, []int{6, 8}),
+	NewVertex(8, []float64{80, 0}, []int{7, 9}),
+	NewVertex(9, []float64{90, 0}, []int{7, 10, 12, 14}),
+	NewVertex(10, []float64{5, 5}, []int{9, 14, 11}),
+	NewVertex(11, []float64{0, 5}, []int{0, 5, 12, 10}),
+	NewVertex(12, []float64{0, 20}, []int{11, 9}),
+	NewVertex(13, []float64{0, 30}, []int{12, 14}),
+	NewVertex(14, []float64{0, 40}, []int{13, 9, 10}),
 }
 
 var benchcases = []struct {
-	st, fn int
+	st, fn Vertexer
 	dst    float64
 }{
 	{
-		st:  0,
-		fn:  10,
+		st:  NewVertex(0, []float64{0, 0}, []int{1, 5, 11}),
+		fn:  NewVertex(10, []float64{5, 5}, []int{9, 14, 11}),
 		dst: 10,
 	},
 	{
-		st:  0,
-		fn:  14,
+		st:  NewVertex(0, []float64{0, 0}, []int{1, 5, 11}),
+		fn:  NewVertex(14, []float64{0, 40}, []int{13, 9, 10}),
 		dst: 45.35533905932738,
 	},
 	{
-		st:  0,
-		fn:  7,
+		st:  NewVertex(0, []float64{0, 0}, []int{1, 5, 11}),
+		fn:  NewVertex(7, []float64{70, 0}, []int{6, 8}),
 		dst: 70,
 	},
 	{
-		st:  0,
-		fn:  13,
+		st:  NewVertex(0, []float64{0, 0}, []int{1, 5, 11}),
+		fn:  NewVertex(13, []float64{0, 30}, []int{12, 14}),
 		dst: 55.35533905932738,
 	},
 	{
-		st:  0,
-		fn:  11,
+		st:  NewVertex(0, []float64{0, 0}, []int{1, 5, 11}),
+		fn:  NewVertex(11, []float64{0, 5}, []int{0, 5, 12, 10}),
 		dst: 5,
 	},
 	{
-		st:  0,
-		fn:  12,
+		st:  NewVertex(0, []float64{0, 0}, []int{1, 5, 11}),
+		fn:  NewVertex(12, []float64{0, 20}, []int{11, 9}),
 		dst: 20,
 	},
 	{
-		st:  0,
-		fn:  13,
-		dst: 55.35533905932738,
-	},
-	{
-		st:  0,
-		fn:  6,
+		st:  NewVertex(0, []float64{0, 0}, []int{1, 5, 11}),
+		fn:  NewVertex(6, []float64{60, 0}, []int{5, 7}),
 		dst: 60,
 	},
 }
 
-func BenchmarkGraph_CalculateResultGraphFromPosition(b *testing.B) {
+func BenchmarkGraphSmallPredefined(b *testing.B) {
 	asr := assert.New(b)
-	g := NewGraph(vertex.vertexes)
-	for n := 0; n < b.N; n++ {
-		for _, c := range benchcases {
-			_, err := g.CalculateResultGraphFromPosition(vertex.vertexes.GetPositionByKey(c.st), vertex.vertexes.GetPositionByKey(c.fn))
-			asr.Equal(err, nil, "error should be nil")
-		}
+	g := NewGraph(vertexes)
+	for _, c := range benchcases {
+		b.Run(fmt.Sprintf("from %v to %v", c.st.GetKey(), c.fn.GetKey()), func(b *testing.B) {
+			for n := 0; n < b.N; n++ {
+				_, err := g.CalculateResultGraph(c.st, c.fn)
+				asr.Equal(err, nil, "error should be nil")
+			}
+		})
 	}
 }
 
-func BenchmarkGraph_CalculateResultGraphFromKeys(b *testing.B) {
+func performanceTestVertexesCreator() []Vertexer {
+	numOfNodes := 1_000
+	vertexes := make([]Vertexer, 0, numOfNodes)
+
+	for i := 0; i < numOfNodes; i++ {
+		connections := make([]int, 0, numOfNodes)
+		for j := 0; j < numOfNodes; j++ {
+			connections = append(connections, j)
+		}
+		y := float64(rand.Intn(numOfNodes - 1))
+		z := float64(rand.Intn(numOfNodes - 1))
+		n := NewVertex(i, []float64{float64(i), y, z}, connections)
+		vertexes = append(vertexes, n)
+	}
+	return vertexes
+}
+
+func BenchmarkGraphHugeGenerated(b *testing.B) {
 	asr := assert.New(b)
-	g := NewGraph(vertex.vertexes)
-	for n := 0; n < b.N; n++ {
-		for _, c := range benchcases {
-			d, err := g.CalculateResultGraphFromKeys(c.st, c.fn)
-			asr.Equal(d.TotalDistance, c.dst, "total distance is incorrect")
+	vertexes := performanceTestVertexesCreator()
+	g := NewGraph(vertexes)
+	b.Run(fmt.Sprintf("from %v to %v", vertexes[0].GetKey(), vertexes[len(vertexes)-1].GetKey()), func(b *testing.B) {
+		for n := 0; n < b.N; n++ {
+			_, err := g.CalculateResultGraph(vertexes[0], vertexes[len(vertexes)-1])
 			asr.Equal(err, nil, "error should be nil")
 		}
-	}
+	})
 }
