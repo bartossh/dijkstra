@@ -427,14 +427,20 @@ func BenchmarkGraphSmallPredefined(b *testing.B) {
 	}
 }
 
-func performanceTestVertexesCreator() []Vertexer {
-	numOfNodes := 1_000
+func performanceTestVertexesCreator(numOfNodes, connPerNode int) []Vertexer {
 	vertexes := make([]Vertexer, 0, numOfNodes)
 
 	for i := 0; i < numOfNodes; i++ {
-		connections := make([]int, 0, numOfNodes)
-		for j := 0; j < numOfNodes; j++ {
-			connections = append(connections, j)
+		connections := make([]int, 0, connPerNode+2)
+		if i < numOfNodes-1 {
+			connections = append(connections, i+1)
+		}
+		if i > 0 {
+			connections = append(connections, i-1)
+			for j := connPerNode; j > 0; j-- {
+				r := rand.Intn(numOfNodes - 2)
+				connections = append(connections, r+1)
+			}
 		}
 		y := float64(rand.Intn(numOfNodes - 1))
 		z := float64(rand.Intn(numOfNodes - 1))
@@ -445,13 +451,26 @@ func performanceTestVertexesCreator() []Vertexer {
 }
 
 func BenchmarkGraphHugeGenerated(b *testing.B) {
+	cases := []struct {
+		numOfNodes, connPerNode int
+	}{
+		{1000, 10},
+		{1000, 100},
+		{10_000, 10},
+		{10_000, 100},
+		{10_000, 1000},
+		{10_000, 5_000},
+		{25_000, 1000},
+	}
 	asr := assert.New(b)
-	vertexes := performanceTestVertexesCreator()
-	g := NewGraph(vertexes)
-	b.Run(fmt.Sprintf("from %v to %v", vertexes[0].GetKey(), vertexes[len(vertexes)-1].GetKey()), func(b *testing.B) {
-		for n := 0; n < b.N; n++ {
-			_, err := g.CalculateResultGraph(vertexes[0], vertexes[len(vertexes)-1])
-			asr.Equal(err, nil, "error should be nil")
-		}
-	})
+	for _, c := range cases {
+		vertexes := performanceTestVertexesCreator(c.numOfNodes, c.connPerNode)
+		b.Run(fmt.Sprintf("number of nodes %v, number off connections per node %v", c.numOfNodes, c.connPerNode), func(b *testing.B) {
+			g := NewGraph(vertexes)
+			for n := 0; n < b.N; n++ {
+				_, err := g.CalculateResultGraph(vertexes[0], vertexes[len(vertexes)-1])
+				asr.Equal(err, nil, "error should be nil")
+			}
+		})
+	}
 }

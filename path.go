@@ -1,6 +1,6 @@
 package djikstra
 
-// PathVertex is a Vertex on the path with a copy of his parent
+// PathVertex is a Vertex on the path with a copy of his Parent
 type PathVertex struct {
 	Parent, Actual Vertexer
 }
