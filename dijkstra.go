@@ -58,6 +58,7 @@ func (g *graph) calcResultGraph(st, fn *node) (Path, error) {
 Loop:
 	for {
 		for n := range act.neighbours {
+			n.neighbours[act] = struct{}{} // assure that it is possible to get back to this neighbour
 			if !n.visited {
 				dist := act.getNeighboursDistance(n)
 				dist = dist + act.total
@@ -92,7 +93,7 @@ Loop:
 		minDist := math.MaxFloat64
 		parent = act
 		for n := range act.neighbours {
-			if n.total < minDist {
+			if n.visited && n.total < minDist {
 				minDist = n.total
 				act = n
 			}
