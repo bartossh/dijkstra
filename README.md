@@ -13,7 +13,7 @@ Go implementation of dijkstra algorithm.
 ### Abstraction 
 
 `Vertexer` is a collective interface required to calculate path. Look in to the documentation to see how to implement it or use
-implementation provided by the package calling `NewVertex(key, possition, connections)`
+implementation provided by the package calling `NewVertex(key, position, connections)`
 
 ### Usage example
 
